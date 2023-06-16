@@ -3,8 +3,8 @@ import { resolve } from '@feathersjs/schema'
 import { Type, getValidator, querySyntax } from '@feathersjs/typebox'
 import { ObjectIdSchema } from '@feathersjs/typebox'
 import { passwordHash } from '@feathersjs/authentication-local'
-import { dataValidator, queryValidator } from '../../validators.js'
-
+import { dataValidator, queryValidator } from '../../validators.js';
+import crypto from 'crypto';
 // Main data model schema
 export const userSchema = Type.Object(
   {
@@ -15,6 +15,7 @@ export const userSchema = Type.Object(
     facebookId: Type.Optional(Type.String()),
     twitterId: Type.Optional(Type.String()),
     githubId: Type.Optional(Type.String()),
+    avatar: Type.Optional(Type.String()),
     auth0Id: Type.Optional(Type.String())
   },
   { $id: 'User', additionalProperties: false }
@@ -30,14 +31,25 @@ export const userExternalResolver = resolve({
 // Schema for creating new entries
 export const userDataSchema = Type.Pick(
   userSchema,
-  ['email', 'password', 'googleId', 'facebookId', 'twitterId', 'githubId', 'auth0Id'],
+  ['email', 'password', 'googleId', 'facebookId', 'twitterId', 'githubId', 'auth0Id', 'avatar'],
   {
     $id: 'UserData'
   }
 )
 export const userDataValidator = getValidator(userDataSchema, dataValidator)
 export const userDataResolver = resolve({
-  password: passwordHash({ strategy: 'local' })
+  password: passwordHash({ strategy: 'local' }),
+  avatar: async (value, user) => {
+    // If the user passed an avatar image, use it
+    if (value !== undefined) {
+      return value
+    }
+
+    // Gravatar uses MD5 hashes from an email address to get the image
+    const hash = crypto.createHash('md5').update(user.email.toLowerCase()).digest('hex')
+    // Return the full avatar URL
+    return `https://s.gravatar.com/avatar/${hash}?s=60`
+  }
 })
 
 // Schema for updating existing entries
@@ -71,7 +83,7 @@ export const userQueryValidator = getValidator(userQuerySchema, queryValidator)
 export const userQueryResolver = resolve({
   // If there is a user (e.g. with authentication), they are only allowed to see their own data
   _id: async (value, user, context) => {
-    if (context.params.user) {
+    if (context.params.user && context.method !== 'find') {
       return context.params.user._id
     }
 
