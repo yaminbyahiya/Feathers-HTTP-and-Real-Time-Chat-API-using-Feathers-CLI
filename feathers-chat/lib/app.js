@@ -12,6 +12,7 @@ const socketio_1 = __importDefault(require("@feathersjs/socketio"));
 const configuration_2 = require("./configuration");
 const log_error_1 = require("./hooks/log-error");
 const mongodb_1 = require("./mongodb");
+const authentication_1 = require("./authentication");
 const index_1 = require("./services/index");
 const channels_1 = require("./channels");
 const app = (0, koa_1.koa)((0, feathers_1.feathers)());
@@ -33,6 +34,7 @@ app.configure((0, socketio_1.default)({
 }));
 app.configure(channels_1.channels);
 app.configure(mongodb_1.mongodb);
+app.configure(authentication_1.authentication);
 app.configure(index_1.services);
 // Register hooks that run on all service methods
 app.hooks({

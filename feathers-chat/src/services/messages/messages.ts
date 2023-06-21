@@ -3,6 +3,8 @@ import { authenticate } from '@feathersjs/authentication'
 
 import { hooks as schemaHooks } from '@feathersjs/schema'
 
+import { logRuntime } from '../../hooks/log-runtime'
+
 import {
   messageDataValidator,
   messagePatchValidator,
@@ -34,6 +36,7 @@ export const message = (app: Application) => {
   app.service(messagePath).hooks({
     around: {
       all: [
+        logRuntime,
         authenticate('jwt'),
         schemaHooks.resolveExternal(messageExternalResolver),
         schemaHooks.resolveResult(messageResolver)
