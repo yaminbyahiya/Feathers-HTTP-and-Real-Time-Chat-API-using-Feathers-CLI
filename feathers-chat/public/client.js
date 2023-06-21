@@ -2,7 +2,7 @@ const socket = io();
 const client = feathers();
 client.configure(feathers.socketio(socket));
 client.configure(feathers.authentication());
-// Login screen
+
 const loginTemplate = (error) => `<div class="login flex min-h-screen bg-neutral justify-center items-center">
 <div class="card w-full max-w-sm bg-base-100 px-4 py-8 shadow-xl">
   <div class="px-4"><i alt="" class="h-32 w-32 block mx-auto i-logos-feathersjs invert"></i>
@@ -34,7 +34,6 @@ const loginTemplate = (error) => `<div class="login flex min-h-screen bg-neutral
 </div>
 </div>`
 
-// Main chat view
 const chatTemplate =
   () => `<div class="drawer drawer-mobile"><input id="drawer-left" type="checkbox" class="drawer-toggle">
   <div class="drawer-content flex flex-col">
@@ -71,7 +70,6 @@ const chatTemplate =
   </div>
 </div>`
 
-// Helper to safely escape HTML
 const escapeHTML = (str) => str.replace(/&/g, '&amp').replace(/</g, '&lt').replace(/>/g, '&gt')
 
 const formatDate = (timestamp) =>
@@ -80,12 +78,11 @@ const formatDate = (timestamp) =>
     dateStyle: 'medium'
   }).format(new Date(timestamp))
 
-// Add a new user to the list
 const addUser = (user) => {
   const userList = document.querySelector('.user-list')
 
   if (userList) {
-    // Add the user to the list
+
     userList.innerHTML += `<li class="user">
       <a>
         <div class="avatar indicator">
@@ -94,19 +91,17 @@ const addUser = (user) => {
       </a>
     </li>`
 
-    // Update the number of users
     const userCount = document.querySelectorAll('.user-list li.user').length
 
     document.querySelector('.online-count').innerHTML = userCount
   }
 }
 
-// Renders a message to the page
 const addMessage = (message) => {
-  // The user that sent this message (added by the populate-user hook)
+
   const { user = {} } = message
   const chat = document.querySelector('#chat')
-  // Escape HTML to prevent XSS attacks
+
   const text = escapeHTML(message.text)
 
   if (chat) {
@@ -123,7 +118,28 @@ const addMessage = (message) => {
       <div class="chat-bubble">${text}</div>
     </div>`
 
-    // Always scroll to the bottom of our message list
     chat.scrollTop = chat.scrollHeight - chat.clientHeight
   }
 }
+
+const showLogin = () => {
+    document.getElementById('app').innerHTML = loginTemplate()
+  }
+
+  const showChat = async () => {
+    document.getElementById('app').innerHTML = chatTemplate()
+  
+
+    const messages = await client.service('messages').find({
+      query: {
+        $sort: { createdAt: -1 },
+        $limit: 25
+      }
+    })
+
+    messages.data.reverse().forEach(addMessage)
+
+    const users = await client.service('users').find()
+
+    users.data.forEach(addUser)
+  }
