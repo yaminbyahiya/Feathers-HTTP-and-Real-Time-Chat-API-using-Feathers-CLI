@@ -168,3 +168,47 @@ const showLogin = () => {
       showLogin(error)
     }
   }
+
+  const addEventListener = (selector, event, handler) => {
+    document.addEventListener(event, async (ev) => {
+      if (ev.target.closest(selector)) {
+        handler(ev)
+      }
+    })
+  }
+
+  addEventListener('#signup', 'click', async () => {
+    const credentials = getCredentials()
+    await client.service('users').create(credentials)
+    await login(credentials)
+  })
+
+  addEventListener('#login', 'click', async () => {
+    const user = getCredentials()
+  
+    await login(user)
+  })
+
+  addEventListener('#logout', 'click', async () => {
+    await client.logout()
+  
+    document.getElementById('app').innerHTML = loginTemplate()
+  })
+
+  addEventListener('#send-message', 'submit', async (ev) => {
+    const input = document.querySelector('[name="text"]')
+  
+    ev.preventDefault()
+
+    await client.service('messages').create({
+      text: input.value
+    })
+  
+    input.value = ''
+  })
+
+  client.service('messages').on('created', addMessage);
+
+  client.service('users').on('created', addUser);
+
+  login();
